@@ -6,14 +6,16 @@ module.exports = async ({ message, botData }) => {
     const sanitizedMessage = message.toLowerCase();
 
     const onGoingQuestionAnswers = botData.ongoingQuestions.map(
-        onGoingQuestion => onGoingQuestion.word[onGoingQuestion.answerIndex]
+        onGoingQuestion => onGoingQuestion.sanitizedAnswer
     );
 
     console.log(`On going question answers:`, onGoingQuestionAnswers);
 
     const answerIndex = onGoingQuestionAnswers.findIndex(
         onGoingQuestionAnswer => {
-            return sanitizedMessage === onGoingQuestionAnswer;
+            return onGoingQuestionAnswer.filter(
+                answer => answer === sanitizedMessage
+            );
         }
     );
 

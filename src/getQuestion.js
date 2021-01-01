@@ -37,9 +37,24 @@ module.exports = async ({ message, botData }) => {
 
     const question = `¿Cómo se dice '${translatedWord}' en ${targetLanguage}?`;
 
+    const unnecessaryData = /\(*\)/g;
+
+    const sanitizedAnswer = word[targetTranslationIndex]
+        .replace(unnecessaryData, '')
+        .toLowerCase();
+    const splitAnswer = sanitizedAnswer.split(' / ');
+
+    const sanitizedQuestion = word[translationIndex]
+        .replace(unnecessaryData, '')
+        .toLowerCase();
+
+    console.log(`Answer: ${splitAnswer}`);
+
     botData.ongoingQuestions.push({
         question,
         word,
+        sanitizedAnswer: splitAnswer,
+        sanitizedQuestion,
         questionIndex: translationIndex,
         answerIndex: targetTranslationIndex
     });

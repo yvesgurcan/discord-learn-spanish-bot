@@ -7,7 +7,19 @@ module.exports = async () => {
 
     console.log(`Spreadsheet response status code: ${response.status}`);
 
-    console.log(`Spreadsheeet response data:`, response.data.values);
+    console.log(
+        `Spreadsheeet response data length:`,
+        response.data.values.length
+    );
 
-    return response.data.values;
+    const sanitizedData = response.data.values.filter(
+        rowData => rowData.length > 1
+    );
+
+    console.log(
+        `Spreadsheeet response sanitized data length:`,
+        sanitizedData.length
+    );
+
+    return sanitizedData;
 };

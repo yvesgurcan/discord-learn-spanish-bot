@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 const getQuestion = require('./getQuestion');
 const { botToken } = require('../config.json');
 const checkAnswer = require('./checkAnswer');
+const checkQuestion = require('./checkQuestion');
 
 const ERROR_MESSAGE = 'Oops! I think I tripped. Silly me.';
 
@@ -28,7 +29,7 @@ bot.on('message', async message => {
 
         console.log(`Raw message content: ${message.content}`);
 
-        const commands = /^(!quiz|!pregunta|!answer|!respuesta)/g;
+        const commands = /^(!quiz|!pregunta|!answer|!respuesta|!key|!clave)/g;
 
         const commandMatch = message.content.match(commands);
 
@@ -71,6 +72,26 @@ bot.on('message', async message => {
                 });
 
                 message.channel.send(answer);
+                return;
+            }
+            case '!key':
+            case '!clave': {
+                if (botData.ongoingQuestions.length === 0) {
+                    message.channel.send('Please ask for a question first.');
+                    return;
+                }
+
+                if (!formattedMessage) {
+                    message.channel.send('Please enter the question key.');
+                    return;
+                }
+
+                const key = await checkQuestion({
+                    message: formattedMessage,
+                    botData
+                });
+
+                message.channel.send(key);
                 return;
             }
             default: {
