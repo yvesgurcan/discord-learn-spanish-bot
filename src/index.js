@@ -1,13 +1,16 @@
 const Discord = require('discord.js');
 
-const getAnswer = require('./getAnswer');
+const getQuestion = require('./getQuestion');
 const { botToken } = require('../config.json');
+const checkAnswer = require('./checkAnswer');
 
 const ERROR_MESSAGE = 'Oops! I think I tripped. Silly me.';
 
 const bot = new Discord.Client();
 
-let botData = {};
+let botData = {
+    ongoingQuestions: []
+};
 
 bot.login(botToken);
 
@@ -17,28 +20,63 @@ bot.once('ready', () => {
     botData.username = bot.user.username;
 });
 
-bot.on('message', message => {
+bot.on('message', async message => {
     try {
         if (message.author.bot) {
             return;
         }
 
         console.log(`Raw message content: ${message.content}`);
-        // console.log(message);
 
-        if (message.mentions.users.size === 0) {
+        const commands = /^(!quiz|!pregunta|!answer|!respuesta)/g;
+
+        const commandMatch = message.content.match(commands);
+
+        if (!commandMatch) {
             return;
         }
 
-        // console.log(`Mentions:`, message.mentions.users);
-        if (message.mentions.users.get(botData.id)) {
-            console.log(`${botData.username} was mentioned.`);
+        console.log(`Command: ${commandMatch}`);
+        const formattedMessage = message.content
+            .replace(commandMatch[0], '')
+            .replace(' ', '');
 
-            const answer = getAnswer({ message, botData });
+        switch (commandMatch[0]) {
+            case '!quiz':
+            case '!pregunta': {
+                const question = await getQuestion({
+                    message: formattedMessage,
+                    botData
+                });
 
-            console.log(`Answer: ${answer}`);
-            message.channel.send(answer);
-            return;
+                console.log(`Question: ${question}`);
+                message.channel.send(question);
+                return;
+            }
+            case '!answer':
+            case '!respuesta': {
+                if (botData.ongoingQuestions.length === 0) {
+                    message.channel.send('Please ask for a question first.');
+                    return;
+                }
+
+                if (!formattedMessage) {
+                    message.channel.send('Please enter your answer.');
+                    return;
+                }
+
+                const answer = await checkAnswer({
+                    message: formattedMessage,
+                    botData
+                });
+
+                message.channel.send(answer);
+                return;
+            }
+            default: {
+                message.channel.send('Unknown command.');
+                return;
+            }
         }
     } catch (error) {
         console.error(error);

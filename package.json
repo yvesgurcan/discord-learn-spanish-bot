@@ -1,7 +1,7 @@
 {
-  "name": "discord-bot",
-  "version": "1.0.1",
-  "description": "Discord bot to fulfill all your bot desires.",
+  "name": "discord-learn-spanish-bot",
+  "version": "1.0.0",
+  "description": "Discord bot to help learn Spanish.",
   "main": "index.js",
   "scripts": {
     "start": "node src",
@@ -17,6 +17,7 @@
     "url": "https://yvesgurcan.com"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "discord.js": "^12.5.1"
   },
   "devDependencies": {
