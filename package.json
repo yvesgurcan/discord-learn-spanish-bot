@@ -1,0 +1,25 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.1",
+  "description": "Discord bot to fulfill all your bot desires.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src",
+    "dev": "nodemon src"
+  },
+  "keywords": [
+    "bot",
+    "discord"
+  ],
+  "author": {
+    "name": "Yves Gurcan",
+    "email": "yves@parallel45.io",
+    "url": "https://yvesgurcan.com"
+  },
+  "dependencies": {
+    "discord.js": "^12.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.6"
+  }
+}
