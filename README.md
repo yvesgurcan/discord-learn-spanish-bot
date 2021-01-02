@@ -1,3 +1,7 @@
+## Documentation
+
+-   This bot sends a message when it connects/disconnects from the server.
+
 ## Installation
 
 ```
@@ -14,4 +18,4 @@ Use `config.example.json` to create `config.json`.
 
 ## Deployment
 
-Uses `pm2`.
+Use `pm2`.

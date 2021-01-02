@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 
 const getQuestion = require('./getQuestion');
-const { botToken } = require('../config.json');
+const { botToken, targetChannel } = require('../config.json');
 const checkAnswer = require('./checkAnswer');
 const checkQuestion = require('./checkQuestion');
 
@@ -10,15 +10,39 @@ const ERROR_MESSAGE = 'Oops! I think I tripped. Silly me.';
 const bot = new Discord.Client();
 
 let botData = {
+    channelId: null,
     ongoingQuestions: []
 };
 
 bot.login(botToken);
 
-bot.once('ready', () => {
+bot.on('ready', () => {
     console.log('Bot ready:', { username: bot.user.username, id: bot.user.id });
     botData.id = bot.user.id;
     botData.username = bot.user.username;
+
+    bot.channels.cache.find(parentChannel => {
+        if (parentChannel.type === 'category') {
+            parentChannel.guild.channels.cache.find(childChannel => {
+                if (childChannel.type === 'text') {
+                    if (childChannel.name === targetChannel) {
+                        botData.channelId = childChannel.id;
+                        console.log(
+                            `Target channel '${targetChannel}' ID: ${childChannel.id}`
+                        );
+                    }
+                }
+            });
+        }
+
+        // We're hacking the find function by simply getting to all the channels from the first channel we find
+        return true;
+    });
+
+    if (botData.channelId) {
+        const channel = bot.channels.cache.get(botData.channelId);
+        channel.send('¡Hola! Estoy conectado.');
+    }
 });
 
 bot.on('message', async message => {
@@ -106,3 +130,18 @@ bot.on('message', async message => {
         );
     }
 });
+
+async function exitGracefully() {
+    if (botData.channelId) {
+        const channel = bot.channels.cache.get(botData.channelId);
+        channel.send('Disconectando... ¡Adios!');
+    }
+}
+
+process
+    .once('SIGUSR2', exitGracefully)
+    // cleanup when process is terminated
+    .on('SIGINT', exitGracefully)
+    .on('SIGTERM', exitGracefully)
+    // cleanup when process is restarted
+    .on('SIGHUP', exitGracefully);
