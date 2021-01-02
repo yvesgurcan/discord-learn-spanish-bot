@@ -13,15 +13,25 @@ module.exports = async ({ message, botData }) => {
 
     const answerIndex = onGoingQuestionAnswers.findIndex(
         onGoingQuestionAnswer => {
-            return onGoingQuestionAnswer.filter(
-                answer => answer === sanitizedMessage
-            );
+            const correctAnswers = onGoingQuestionAnswer.filter(answer => {
+                console.log(
+                    'Checking for answers: ',
+                    sanitizedMessage,
+                    answer,
+                    answer === sanitizedMessage
+                );
+                return answer === sanitizedMessage;
+            });
+            console.log('Correct answers:', correctAnswers);
+            return correctAnswers.length > 0;
         }
     );
 
     if (answerIndex === -1) {
         return 'Incorrecto.';
     }
+
+    console.log(`Answer index:`, answerIndex);
 
     botData.ongoingQuestions = botData.ongoingQuestions.filter(
         (data, index) => index !== answerIndex
