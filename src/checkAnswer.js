@@ -1,5 +1,3 @@
-const getVocabulary = require('./getVocabulary');
-
 module.exports = async ({ message, botData }) => {
     console.log(`Bot ongoing questions:`, botData.ongoingQuestions);
 
