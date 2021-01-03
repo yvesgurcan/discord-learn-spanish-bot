@@ -4,13 +4,17 @@ const getQuestion = require('./getQuestion');
 const { botToken, targetChannel } = require('../config.json');
 const checkAnswer = require('./checkAnswer');
 const checkQuestion = require('./checkQuestion');
+const sendAutonomousMessage = require('./sendAutonomousMessage');
+const setConfig = require('./setConfig');
+const getConfig = require('./getConfig');
+const setChannel = require('./setChannel');
 
 const ERROR_MESSAGE = 'Oops! I think I tripped. Silly me.';
 
 const bot = new Discord.Client();
 
 let botData = {
-    channelId: null,
+    channelId: undefined,
     ongoingQuestions: []
 };
 
@@ -21,27 +25,14 @@ bot.on('ready', () => {
     botData.id = bot.user.id;
     botData.username = bot.user.username;
 
-    bot.channels.cache.find(parentChannel => {
-        if (parentChannel.type === 'category') {
-            parentChannel.guild.channels.cache.find(childChannel => {
-                if (childChannel.type === 'text') {
-                    if (childChannel.name === targetChannel) {
-                        botData.channelId = childChannel.id;
-                        console.log(
-                            `Target channel '${targetChannel}' ID: ${childChannel.id}`
-                        );
-                    }
-                }
-            });
-        }
-
-        // We're hacking the find function by simply getting to all the channels from the first channel we find
-        return true;
-    });
+    setChannel(bot, botData, targetChannel);
 
     if (botData.channelId) {
-        const channel = bot.channels.cache.get(botData.channelId);
-        channel.send('¡Hola! Estoy conectado.');
+        sendAutonomousMessage({
+            message: '¡Hola! Estoy conectado.',
+            botData,
+            bot
+        });
     }
 });
 
@@ -51,9 +42,14 @@ bot.on('message', async message => {
             return;
         }
 
+        // If bot is assigned to a channel, only respond from messages coming from that channel
+        if (botData.channelId && message.channel.id !== botData.channelId) {
+            return;
+        }
+
         console.log(`Raw message content: ${message.content}`);
 
-        const commands = /^(!quiz|!pregunta|!answer|!respuesta|!key|!clave)/g;
+        const commands = /^(!config|!quiz|!pregunta|!answer|!respuesta|!key|!clave)/g;
 
         const commandMatch = message.content.match(commands);
 
@@ -67,6 +63,92 @@ bot.on('message', async message => {
             .replace(' ', '');
 
         switch (commandMatch[0]) {
+            case '!config': {
+                if (!formattedMessage) {
+                    message.channel.send(
+                        `Type one of the following commands: \n\`!config get channel\`: Gets where the bot sends general messages. \n\`!config set channel CHANNEL_NAME\`: Sets where the bot sends general messages.
+                        `
+                    );
+                    return;
+                }
+
+                const arguments = formattedMessage.split(' ');
+                console.log(`Config arguments: ${arguments}`);
+
+                switch (arguments[0]) {
+                    default: {
+                        message.channel.send(
+                            `Unknown argument \`${arguments[0]}\`. Should be \`get\` or \`set\`.`
+                        );
+                        return;
+                    }
+                    case 'set': {
+                        if (arguments.length < 2) {
+                            message.channel.send(
+                                `Command expects at least 2 arguments: \`!config set SETTING\``
+                            );
+                            return;
+                        }
+
+                        switch (arguments[1]) {
+                            default: {
+                                message.channel.send(
+                                    `Unknown setting \`${arguments[1]}\`. Should be \`channel\`.`
+                                );
+                                return;
+                            }
+                            case 'channel': {
+                                if (!arguments[2]) {
+                                    message.channel.send(
+                                        `Command expects at least 3 arguments: \`!config set channel CHANNEL_NAME\``
+                                    );
+                                    return;
+                                }
+
+                                setConfig({
+                                    setting: 'channelId',
+                                    arguments: [arguments[2]],
+                                    botData,
+                                    bot
+                                });
+
+                                if (botData.channelId === undefined) {
+                                    message.channel.send(
+                                        `Channel \`${arguments[2]}\` not found.`
+                                    );
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    case 'get': {
+                        if (arguments.length < 2) {
+                            message.channel.send(
+                                `Command expects at least 2 arguments: \`!config get SETTING\``
+                            );
+                            return;
+                        }
+
+                        switch (arguments[1]) {
+                            default: {
+                                message.channel.send(
+                                    `Unknown setting \`${arguments[1]}\`. Should be \`channel\`.`
+                                );
+                                return;
+                            }
+                            case 'channel': {
+                                const setting = getConfig({
+                                    setting: 'channelId',
+                                    botData,
+                                    bot
+                                });
+                                message.channel.send(setting || 'undefined');
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
             case '!quiz':
             case '!pregunta': {
                 const question = await getQuestion({
@@ -132,10 +214,15 @@ bot.on('message', async message => {
 });
 
 async function exitGracefully() {
-    if (botData.channelId) {
-        const channel = bot.channels.cache.get(botData.channelId);
-        channel.send('Disconectando... ¡Adios!');
-    }
+    sendAutonomousMessage({
+        message: 'Disconectando... ¡Adios!',
+        botData,
+        bot,
+        callback: () => {
+            console.log('Exiting process.');
+            process.exit(0);
+        }
+    });
 }
 
 process
