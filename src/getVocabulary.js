@@ -12,9 +12,10 @@ module.exports = async () => {
         response.data.values.length
     );
 
-    const sanitizedData = response.data.values.filter(
-        rowData => rowData.length > 1
-    );
+    const sanitizedData = response.data.values.filter(rowData => {
+        const hasEmptyCell = rowData.some(cell => cell === '');
+        return !hasEmptyCell && rowData.length > 1;
+    });
 
     console.log(
         `Spreadsheeet response sanitized data length:`,
